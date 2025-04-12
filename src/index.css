@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* After your Tailwind imports */
+.test-class {
+    background-color: red;
+    padding: 20px;
+  }
