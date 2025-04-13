@@ -10,7 +10,6 @@ export const Appbar = () => {
     useEffect(()=> {
         const userToken = localStorage.getItem("token");
 
-        //here we chk if the user exists in local storage
         if(!userToken){
             navigate("/signin");
         }else{
