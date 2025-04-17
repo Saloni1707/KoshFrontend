@@ -8,31 +8,68 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export const Signin = () => {
-  const[username , setUsername] = useState("");
-  const [password , setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  useEffect( () => {
+  useEffect(() => {
     const userToken = localStorage.getItem("token");
-    //check if the token exists in the local storage
-    if(!userToken){
-      navigate("/signin");
-    }else{
-      //Fetch balance if token exists
+    console.log("Initial token check:", userToken ? "Token exists" : "No token");
+
+    if (userToken) {
+      console.log("Validating token...");
       axios
-        .get(import.meta.env.VITE_SERVER_URL + "/api/v1/account/balance",{
-          headers:{
-            Authorization:"Bearer " + userToken,
+        .get(`${import.meta.env.VITE_SERVER_URL}/api/v1/account/balance`, {
+          headers: {
+            Authorization: `Bearer ${userToken}`,
           },
         })
         .then((response) => {
-          setBal(response.data.balance);
+          console.log("Token validation successful", response.data);
+          navigate("/dashboard", { replace: true });
         })
-        .catch((error) =>{
-          navigate("/signin");
+        .catch((error) => {
+          console.error("Token validation failed:", {
+            status: error.response?.status,
+            data: error.response?.data
+          });
+          localStorage.removeItem("token");
         });
     }
-  },[]);
+  }, [navigate]);
+
+  const handleSignIn = async () => {
+    try {
+      console.log("Attempting signin...");
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/v1/user/signin`,
+        { username, password }
+      );
+
+      console.log("Sign in successful:", response.data);
+      
+      if (!response.data.token) {
+        throw new Error("No token received from server");
+      }
+
+      // Store token
+      localStorage.setItem("token", response.data.token);
+      
+      // Verify token was stored
+      const storedToken = localStorage.getItem("token");
+      console.log("Stored token verification:", storedToken ? "Token stored successfully" : "Token storage failed");
+
+      // Force a clean navigation to dashboard
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      console.error("Signin error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      alert(error.response?.data?.message || "Sign in failed. Please try again.");
+    }
+  };
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex justify-center items-center p-4">
@@ -66,27 +103,12 @@ export const Signin = () => {
           
           <div className="mt-8">
             <Button 
-              onClick = {async () => {
-                try {
-                  const response = await axios.post(
-                    import.meta.env.VITE_SERVER_URL + "/api/v1/user/signin",
-                    {
-                      username,
-                      password
-                    }
-                  );
-                  localStorage.setItem("token",response.data.token);
-                  navigate("/dashboard");
-                } catch (error) {
-                  console.error("Signin error:", error);
-                  alert("Signin failed. Please check your credentials.");
-                }
-              }}
-              label = {"Sign In"}
+              onClick={handleSignIn}
+              label={"Sign In"}
             />
             <div className="mt-4 text-center">
               <BottomWarning
-                label = {"Don't have an account?"}
+                label={"Don't have an account?"}
                 buttonText={"Sign up"}
                 to={"/signup"}
               />

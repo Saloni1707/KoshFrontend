@@ -6,6 +6,7 @@ import { InputBox } from "@/components/InputBox";
 import { Button } from "@/components/Button";
 import { BottomWarning } from "@/components/BottomWarnings";
 import axios from "axios";
+import { useAuth } from "../App"; // Adjust path as needed
 
 export const Signup = () => {
   const [formData, setFormData] = useState({
@@ -27,8 +28,9 @@ export const Signup = () => {
     }
   });
   const navigate = useNavigate();
+  const { login } = useAuth(); // Use the auth context
 
-  // Check password strength as user types
+  // Password strength checker logic remains the same...
   useEffect(() => {
     const password = formData.password;
     const reqs = {
@@ -39,7 +41,6 @@ export const Signup = () => {
       special: /[!@#$%^&*]/.test(password)
     };
     
-    // Calculate score based on met requirements
     const score = Object.values(reqs).filter(Boolean).length;
     
     setPasswordStrength({
@@ -48,27 +49,24 @@ export const Signup = () => {
     });
   }, [formData.password]);
 
+  // Form validation logic remains the same...
   const validateForm = () => {
     const newErrors = {};
     
-    // Validate firstname
     if (!formData.firstname.trim()) {
       newErrors.firstname = "First name is required";
     }
 
-    // Validate lastname
     if (!formData.lastname.trim()) {
       newErrors.lastname = "Last name is required";
     }
 
-    // Validate username
     if (!formData.username.trim()) {
       newErrors.username = "Username is required";
     } else if (formData.username.length < 3) {
       newErrors.username = "Username must be at least 3 characters";
     }
 
-    // Validate password
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (passwordStrength.score < 3) {
@@ -84,7 +82,6 @@ export const Signup = () => {
       ...prev,
       [field]: e.target.value
     }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -97,33 +94,55 @@ export const Signup = () => {
     if (!validateForm()) {
       return;
     }
-
+  
     setLoading(true);
+    setErrors({});
+  
     try {
-      const response = await axios.post(
-        import.meta.env.VITE_SERVER_URL + "/api/v1/user/signup",
+      // Sign up request
+      const signupResponse = await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/v1/user/signup`,
         formData
       );
-      localStorage.setItem("token", response.data.token);
-      navigate("/dashboard");
-    } catch (error) {
-      if (error.response?.data?.message === "Email already taken") {
-        setErrors(prev => ({
-          ...prev,
-          username: "Username is already taken"
-        }));
-      } else {
-        setErrors(prev => ({
-          ...prev,
-          submit: "Failed to create account. Please try again."
-        }));
+  
+      console.log("Signup response:", signupResponse.data);
+      
+      // // Immediately sign in after successful signup
+      const signinResponse = await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/v1/user/signin`,
+        {
+          username: formData.username,
+          password: formData.password
+        }
+      );
+  
+      console.log("Auto signin response:", signinResponse.data);
+  
+      const token = signinResponse.data.token;
+      if (!token || typeof token !== 'string') {
+        throw new Error("Invalid token received from server");
       }
+  
+      //Use the login function from context instead of directly setting localStorage
+      login(token);
+      
+      // Navigate to dashboard after successful authentication
+      navigate("/dashboard", { replace: true });
+      
+    } catch (error) {
+      console.error("Signup/Signin error:", error);
+      
+      const errorMessage = error.response?.data?.message || error.message || "An unknown error occurred";
+      setErrors(prev => ({
+        ...prev,
+        submit: errorMessage
+      }));
     } finally {
       setLoading(false);
     }
   };
 
-  // Get color for password strength indicator
+  // The rest of your component remains the same...
   const getStrengthColor = () => {
     switch (passwordStrength.score) {
       case 0:
@@ -143,8 +162,10 @@ export const Signup = () => {
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex justify-center items-center p-4">
+      {/* Your UI code remains the same */}
       <div className="flex flex-col justify-center w-full max-w-md">
         <div className="rounded-xl bg-white shadow-xl w-full text-center p-8">
+          {/* Component UI remains the same */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-indigo-600">KoshPay</h1>
             <p className="text-gray-500 mt-1">Create your account</p>
@@ -153,7 +174,9 @@ export const Signup = () => {
           <Heading label={"Sign Up"} />
           <SubHeading label={"Enter your information to create an account"} />
 
+          {/* Form fields remain the same */}
           <div className="mt-6 space-y-4">
+            {/* First name and last name fields */}
             <div className="flex gap-4">
               <div className="flex-1">
                 <InputBox
@@ -175,6 +198,7 @@ export const Signup = () => {
               </div>
             </div>
 
+            {/* Username field */}
             <div className="relative">
               <InputBox
                 value={formData.username}
@@ -188,6 +212,7 @@ export const Signup = () => {
               </div>
             </div>
 
+            {/* Password field and strength indicator */}
             <div>
               <InputBox
                 value={formData.password}
@@ -230,12 +255,14 @@ export const Signup = () => {
             </div>
           </div>
 
+          {/* Error message */}
           {errors.submit && (
             <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
               {errors.submit}
             </div>
           )}
 
+          {/* Submit button and sign-in link */}
           <div className="mt-8">
             <Button 
               onClick={handleSubmit}

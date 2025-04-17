@@ -8,37 +8,53 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export const Dashboard = () => {
-  const [bal, setBal] = useState(0);
+  const [balance, setBalance] = useState(0);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userToken = localStorage.getItem("token");
-    //check if the token exists in the local storage
-    if (!userToken) {
-      navigate("/signin");
-    } else {
-      //Fetch balance if token exists
-      axios
-        .get(import.meta.env.VITE_SERVER_URL + "/api/v1/account/balance", {
-          headers: {
-            Authorization: "Bearer " + userToken,
-          },
-        })
-        .then((response) => {
-          setBal(response.data.balance);
-        })
-        .catch((error) => {
-          console.error("Error fetching balance:", error);
-          if (error.response && error.response.status === 401) {
-            navigate("/signin");
+    console.log("Dashboard mounting, token in localStorage:", localStorage.getItem("token"));
+    
+    const fetchBalance = async () => {
+      const token = localStorage.getItem("token");
+      console.log("Dashboard mounting - token:", token);
+
+      if (!token) {
+        console.log("No token found, redirecting to signin");
+        navigate("/signin");
+        return;
+      }
+      
+      console.log("About to make API call with token:", token.substring(0, 20) + "...");
+      
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_SERVER_URL}/api/v1/account/balance`, 
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
-        });
-    }
-  }, [navigate]);
+        );
+        
+        console.log("Balance API response:", response.data);
+        setBalance(response.data.balance);
+      } catch (error) {
+        console.error("Balance fetch error:", error);
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/signin");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchBalance();
+  }, []);
 
   const handleSendMoney = (userId) => {
-    // Get the user's name from the users list
     axios
       .get(import.meta.env.VITE_SERVER_URL + "/api/v1/user/bulk", {
         headers: {
@@ -61,14 +77,18 @@ export const Dashboard = () => {
       });
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <Appbar />
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="bg-white rounded-xl shadow-md p-6">
-          <Balance value={bal} />
+          <Balance value={balance} />
         </div>
-        
+            
         <div className="bg-white rounded-xl shadow-md p-6">
           <Users onSend={handleSendMoney} />
         </div>
@@ -103,4 +123,3 @@ export const Dashboard = () => {
     </div>
   );
 };
-  
