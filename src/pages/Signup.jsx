@@ -28,7 +28,7 @@ export const Signup = () => {
     }
   });
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { signup, login } = useAuth();
 
   useEffect(() => {
     const password = formData.password;
@@ -97,31 +97,9 @@ export const Signup = () => {
     setErrors({});
   
     try {
-      // First, sign up the user
-      await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/v1/user/signup`,
-        formData
-      );
-  
-      // Then, sign in to get the token
-      const signinResponse = await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/v1/user/signin`,
-        {
-          username: formData.username,
-          password: formData.password
-        }
-      );
-  
-      const token = signinResponse.data.token;
-      if (!token || typeof token !== 'string') {
-        throw new Error("Invalid token received from server");
-      } 
-
-      // Login will handle navigation to dashboard
-      await login(token);
-      
+      await signup(formData);
     } catch (error) {
-      console.error("Signup/Signin error:", error);
+      console.error("Signup error:", error);
       localStorage.removeItem("token"); // Clean up in case of error
       const errorMessage = error.response?.data?.message || error.message || "An unknown error occurred";
       setErrors(prev => ({
@@ -150,113 +128,69 @@ export const Signup = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex justify-center items-center p-4">
+    <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen flex justify-center items-center p-4">
       <div className="flex flex-col justify-center w-full max-w-md">
         <div className="rounded-xl bg-white shadow-xl w-full text-center p-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-indigo-600">KoshPay</h1>
-            <p className="text-gray-500 mt-1">Create your account</p>
+          <div className="mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-indigo-600">EasyPay</h1>
+            <p className="text-gray-500 mt-2">Fast, secure, and easy payments</p>
           </div>
-
-          <Heading label={"Sign Up"} />
-          <SubHeading label={"Enter your information to create an account"} />
-
+          
+          <Heading label={"Create an Account"}/>
+          <SubHeading label={"Enter your details to get started"}/>
+          
           <div className="mt-6 space-y-4">
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <InputBox
-                  value={formData.firstname}
-                  onChange={handleChange("firstname")}
-                  placeholder="John"
-                  label={"First Name"}
-                  error={errors.firstname}
-                />
-              </div>
-              <div className="flex-1">
-                <InputBox
-                  value={formData.lastname}
-                  onChange={handleChange("lastname")}
-                  placeholder="Doe"
-                  label={"Last Name"}
-                  error={errors.lastname}
-                />
-              </div>
-            </div>
-
-            <div className="relative">
-              <InputBox
-                value={formData.username}
-                onChange={handleChange("username")}
-                placeholder="Choose a username"
-                label={"Username"}
-                error={errors.username}
-              />
-              <div className="absolute right-3 top-[38px] text-xs text-gray-500">
-                {formData.username.length}/3 min
-              </div>
-            </div>
-
-            <div>
-              <InputBox
-                value={formData.password}
-                onChange={handleChange("password")}
-                placeholder="••••••••"
-                label={"Password"}
-                type="password"
-                error={errors.password}
-              />
-              
-              <div className="mt-2">
-                <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full transition-all duration-300 ${getStrengthColor()}`}
-                    style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                  />
-                </div>
-                <div className="mt-2 text-left space-y-1">
-                  <p className="text-sm font-medium text-gray-700">Password requirements:</p>
-                  <ul className="text-xs space-y-1">
-                    <li className={passwordStrength.requirements.length ? "text-green-600" : "text-gray-500"}>
-                      ✓ At least 6 characters
-                    </li>
-                    <li className={passwordStrength.requirements.uppercase ? "text-green-600" : "text-gray-500"}>
-                      ✓ At least one uppercase letter
-                    </li>
-                    <li className={passwordStrength.requirements.lowercase ? "text-green-600" : "text-gray-500"}>
-                      ✓ At least one lowercase letter
-                    </li>
-                    <li className={passwordStrength.requirements.number ? "text-green-600" : "text-gray-500"}>
-                      ✓ At least one number
-                    </li>
-                    <li className={passwordStrength.requirements.special ? "text-green-600" : "text-gray-500"}>
-                      ✓ At least one special character (!@#$%^&*)
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            <InputBox 
+              value={formData.firstname}
+              onChange={handleChange("firstname")}
+              placeholder="Enter your first name"
+              label={"First Name"}
+              disabled={loading}
+            />
+            <InputBox 
+              value={formData.lastname}
+              onChange={handleChange("lastname")}
+              placeholder="Enter your last name"
+              label={"Last Name"}
+              disabled={loading}
+            />
+            <InputBox 
+              value={formData.username}
+              onChange={handleChange("username")}
+              placeholder="Choose a username"
+              label={"Username"}
+              disabled={loading}
+            />
+            <InputBox 
+              value={formData.password}
+              onChange={handleChange("password")}
+              placeholder="••••••••"
+              label={"Password"}
+              type="password"
+              disabled={loading}
+            />
           </div>
 
-          {errors.submit && (
-            <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
-              {errors.submit}
-            </div>
-          )}
-
-          <div className="mt-8">
-            <Button 
+          <div className="mt-6">
+            <Button
               onClick={handleSubmit}
-              label={loading ? "Creating Account..." : "Create Account"}
+              label={loading ? "Creating Account..." : "Sign Up"}
               disabled={loading || passwordStrength.score < 3}
             />
-            <div className="mt-4 text-center">
-              <BottomWarning
-                label={"Already have an account?"}
-                buttonText={"Sign in"}
-                to={"/signin"}
-              />
-            </div>
           </div>
+
+          <BottomWarning 
+            label={"Already have an account?"} 
+            buttonText={"Sign In"}
+            to={"/signin"}
+          />
         </div>
       </div>
     </div>

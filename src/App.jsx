@@ -6,6 +6,7 @@ import { Signup } from "./pages/Signup";
 import { SendMoney } from "./pages/SendMoney";
 import { Home } from './pages/Home';
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -68,30 +69,34 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/send" element={
-            <ProtectedRoute>
-              <SendMoney />
-            </ProtectedRoute>
-          } />
-          <Route path="/signin" element={
-            <AuthRoute>
-              <Signin />
-            </AuthRoute>
-          } />
-          <Route path="/signup" element={
-            <AuthRoute>
-              <Signup />
-            </AuthRoute>
-          } />
-          <Route path="/" element={<HomeRoute />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <ThemeProvider>
+          <div className="min-h-screen transition-colors duration-200 bg-white dark:bg-gray-900">
+            <Routes>
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/send" element={
+                <ProtectedRoute>
+                  <SendMoney />
+                </ProtectedRoute>
+              } />
+              <Route path="/signin" element={
+                <AuthRoute>
+                  <Signin />
+                </AuthRoute>
+              } />
+              <Route path="/signup" element={
+                <AuthRoute>
+                  <Signup />
+                </AuthRoute>
+              } />
+              <Route path="/" element={<HomeRoute />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   );
