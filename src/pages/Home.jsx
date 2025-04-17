@@ -1,7 +1,17 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Home = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleNavigation = (path) => {
+    if (isAuthenticated && (path === '/signin' || path === '/signup')) {
+      navigate('/dashboard');
+    } else {
+      navigate(path);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -16,14 +26,14 @@ export const Home = () => {
             </div>
             <div className="flex space-x-4">
               <button
-                onClick={() => navigate("/signin")}
+                onClick={() => handleNavigation("/signin")}
                 className="px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md"
                 aria-label="Sign In"
               >
                 Sign In
               </button>
               <button
-                onClick={() => navigate("/signup")}
+                onClick={() => handleNavigation("/signup")}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 aria-label="Sign Up"
               >
@@ -46,7 +56,7 @@ export const Home = () => {
         </p>
         <div className="mt-6">
           <button
-            onClick={() => navigate("/signup")}
+            onClick={() => handleNavigation("/signup")}
             className="px-8 py-3 bg-indigo-600 text-white rounded-lg text-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Get Started"
           >

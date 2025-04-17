@@ -1,6 +1,7 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 export const SendMoney = () => {
   const navigate = useNavigate();
@@ -10,20 +11,22 @@ export const SendMoney = () => {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { logout } = useAuth();
 
   useEffect(() => {
     const userToken = localStorage.getItem("token");
 
     // Check if token exists in local storage
     if (!userToken) {
-      navigate("/signin"); // Redirect to sign-in page if token doesn't exist
+      logout();
+      return;
     }
     
     // Check if id and name are provided
     if (!id || !name) {
-      navigate("/dashboard"); // Redirect to dashboard if id or name is missing
+      navigate("/dashboard", { replace: true });
     }
-  }, [navigate, id, name]);
+  }, [navigate, id, name, logout]);
 
   const handleTransfer = async () => {
     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
@@ -35,7 +38,7 @@ export const SendMoney = () => {
     setError(null);
     
     try {
-      const res = await axios.post(
+      await axios.post(
         import.meta.env.VITE_SERVER_URL + "/api/v1/account/transfer",
         {
           to: id,
@@ -48,11 +51,15 @@ export const SendMoney = () => {
         }
       );
       
-      // Navigate to payment status page with success message
-      navigate("/paymentstatus?message=" + encodeURIComponent(res.data.message));
+      // On successful transfer, go back to dashboard
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Transfer error:", error);
-      setError(error.response?.data?.message || "Transfer failed. Please try again.");
+      if (error.response?.status === 401) {
+        await logout();
+      } else {
+        setError(error.response?.data?.message || "Transfer failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -112,7 +119,7 @@ export const SendMoney = () => {
         </button>
 
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/dashboard", { replace: true })}
           className="w-full py-3 bg-gray-200 rounded-lg text-gray-800 font-medium hover:bg-gray-300"
         >
           Cancel

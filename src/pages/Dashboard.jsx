@@ -1,84 +1,101 @@
-// src/pages/Signup.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Appbar } from "../components/Appbar";
 import { Balance } from "../components/Balance";
 import { Users } from "../components/Users";
 import { TransactionHistory } from "../components/TransactionHistory";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export const Dashboard = () => {
   const [balance, setBalance] = useState(0);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const fetchBalance = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      await logout();
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/v1/account/balance`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setBalance(response.data.balance);
+    } catch (error) {
+      console.error("Balance fetch error:", error);
+      if (error.response?.status === 401) {
+        await logout();
+      }
+    }
+  }, [logout]);
 
   useEffect(() => {
-    console.log("Dashboard mounting, token in localStorage:", localStorage.getItem("token"));
+    let mounted = true;
     
-    const fetchBalance = async () => {
-      const token = localStorage.getItem("token");
-      console.log("Dashboard mounting - token:", token);
-
-      if (!token) {
-        console.log("No token found, redirecting to signin");
-        navigate("/signin");
-        return;
-      }
-      
-      console.log("About to make API call with token:", token.substring(0, 20) + "...");
-      
+    const initializeDashboard = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_SERVER_URL}/api/v1/account/balance`, 
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        
-        console.log("Balance API response:", response.data);
-        setBalance(response.data.balance);
-      } catch (error) {
-        console.error("Balance fetch error:", error);
-        if (error.response?.status === 401) {
-          localStorage.removeItem("token");
-          navigate("/signin");
-        }
+        await fetchBalance();
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
-  
-    fetchBalance();
-  }, []);
 
-  const handleSendMoney = (userId) => {
-    axios
-      .get(import.meta.env.VITE_SERVER_URL + "/api/v1/user/bulk", {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      })
-      .then((response) => {
-        const users = response.data.user || [];
-        const user = users.find(u => u._id === userId);
-        if (user) {
-          const fullName = `${user.firstname} ${user.lastname}`;
-          navigate(`/send?id=${userId}&name=${encodeURIComponent(fullName)}`);
-        } else {
-          navigate(`/send?id=${userId}&name=User`);
+    initializeDashboard();
+
+    return () => {
+      mounted = false;
+    };
+  }, [fetchBalance]);
+
+  const handleSendMoney = useCallback(async (userId) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      await logout();
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/v1/user/bulk`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      })
-      .catch((error) => {
-        console.error("Error fetching user details:", error);
-        navigate(`/send?id=${userId}&name=User`);
-      });
-  };
+      );
+
+      const users = response.data.user || [];
+      const user = users.find(u => u._id === userId);
+      const fullName = user ? `${user.firstname} ${user.lastname}` : 'User';
+      navigate(`/send?id=${userId}&name=${encodeURIComponent(fullName)}`, { replace: false });
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      if (error.response?.status === 401) {
+        await logout();
+      } else {
+        navigate(`/send?id=${userId}&name=User`, { replace: false });
+      }
+    }
+  }, [navigate, logout]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
   }
 
   return (
@@ -99,25 +116,21 @@ export const Dashboard = () => {
             className="w-full p-4 flex items-center justify-between text-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <span>Transaction History</span>
-            <span className="transform transition-transform duration-200" style={{
-              transform: isHistoryVisible ? 'rotate(180deg)' : 'rotate(0deg)'
-            }}>
+            <span 
+              className="transform transition-transform duration-200" 
+              style={{
+                transform: isHistoryVisible ? 'rotate(180deg)' : 'rotate(0deg)'
+              }}
+            >
               ▼
             </span>
           </button>
           
-          <div 
-            className="transition-all duration-300 ease-in-out"
-            style={{
-              maxHeight: isHistoryVisible ? '600px' : '0',
-              opacity: isHistoryVisible ? '1' : '0',
-              overflow: 'hidden'
-            }}
-          >
-            <div className="p-6 border-t border-gray-100">
+          {isHistoryVisible && (
+            <div className="p-4">
               <TransactionHistory />
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

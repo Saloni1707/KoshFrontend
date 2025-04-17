@@ -6,8 +6,7 @@ import { InputBox } from "@/components/InputBox";
 import { Button } from "@/components/Button";
 import { BottomWarning } from "@/components/BottomWarnings";
 import axios from "axios";
-import { useAuth } from "@/contexts/AuthContext"; // Adjust the import path as necessary
-console.log("useAuth is:", useAuth);
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Signup = () => {
   const [formData, setFormData] = useState({
@@ -29,14 +28,8 @@ export const Signup = () => {
     }
   });
   const navigate = useNavigate();
-  // const { login } = useAuth(); // Use the auth context
-  // console.log("Login function available:", login);
+  const { login } = useAuth();
 
-  const auth = useAuth();
-  console.log("Auth object:", auth);
-  const login = auth?.login;
-
-  // Password strength checker logic remains the same...
   useEffect(() => {
     const password = formData.password;
     const reqs = {
@@ -55,7 +48,6 @@ export const Signup = () => {
     });
   }, [formData.password]);
 
-  // Form validation logic remains the same...
   const validateForm = () => {
     const newErrors = {};
     
@@ -105,15 +97,13 @@ export const Signup = () => {
     setErrors({});
   
     try {
-      // Sign up request
-      const signupResponse = await axios.post(
+      // First, sign up the user
+      await axios.post(
         `${import.meta.env.VITE_SERVER_URL}/api/v1/user/signup`,
         formData
       );
   
-      console.log("Signup response:", signupResponse.data);
-      
-      // // Immediately sign in after successful signup
+      // Then, sign in to get the token
       const signinResponse = await axios.post(
         `${import.meta.env.VITE_SERVER_URL}/api/v1/user/signin`,
         {
@@ -122,22 +112,17 @@ export const Signup = () => {
         }
       );
   
-      console.log("Auto signin response:", signinResponse.data);
-  
       const token = signinResponse.data.token;
       if (!token || typeof token !== 'string') {
         throw new Error("Invalid token received from server");
       } 
-  
-      //Use the login function from context instead of directly setting localStorage
-      login(token);
-      
-      // Navigate to dashboard after successful authentication
-      navigate("/dashboard", { replace: true });
+
+      // Login will handle navigation to dashboard
+      await login(token);
       
     } catch (error) {
       console.error("Signup/Signin error:", error);
-      
+      localStorage.removeItem("token"); // Clean up in case of error
       const errorMessage = error.response?.data?.message || error.message || "An unknown error occurred";
       setErrors(prev => ({
         ...prev,
@@ -148,7 +133,6 @@ export const Signup = () => {
     }
   };
 
-  // The rest of your component remains the same...
   const getStrengthColor = () => {
     switch (passwordStrength.score) {
       case 0:
@@ -158,20 +142,17 @@ export const Signup = () => {
       case 3:
         return "bg-yellow-500";
       case 4:
-        return "bg-blue-200";
       case 5:
         return "bg-green-500";
       default:
-        return "bg-gray-200";
+        return "bg-gray-300";
     }
   };
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex justify-center items-center p-4">
-      {/* Your UI code remains the same */}
       <div className="flex flex-col justify-center w-full max-w-md">
         <div className="rounded-xl bg-white shadow-xl w-full text-center p-8">
-          {/* Component UI remains the same */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-indigo-600">KoshPay</h1>
             <p className="text-gray-500 mt-1">Create your account</p>
@@ -180,9 +161,7 @@ export const Signup = () => {
           <Heading label={"Sign Up"} />
           <SubHeading label={"Enter your information to create an account"} />
 
-          {/* Form fields remain the same */}
           <div className="mt-6 space-y-4">
-            {/* First name and last name fields */}
             <div className="flex gap-4">
               <div className="flex-1">
                 <InputBox
@@ -204,7 +183,6 @@ export const Signup = () => {
               </div>
             </div>
 
-            {/* Username field */}
             <div className="relative">
               <InputBox
                 value={formData.username}
@@ -218,7 +196,6 @@ export const Signup = () => {
               </div>
             </div>
 
-            {/* Password field and strength indicator */}
             <div>
               <InputBox
                 value={formData.password}
@@ -229,7 +206,6 @@ export const Signup = () => {
                 error={errors.password}
               />
               
-              {/* Password strength indicator */}
               <div className="mt-2">
                 <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
                   <div 
@@ -261,14 +237,12 @@ export const Signup = () => {
             </div>
           </div>
 
-          {/* Error message */}
           {errors.submit && (
             <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
               {errors.submit}
             </div>
           )}
 
-          {/* Submit button and sign-in link */}
           <div className="mt-8">
             <Button 
               onClick={handleSubmit}
