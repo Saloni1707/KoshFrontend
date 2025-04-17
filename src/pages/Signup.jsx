@@ -128,70 +128,98 @@ export const Signup = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen flex justify-center items-center p-4">
-      <div className="flex flex-col justify-center w-full max-w-md">
-        <div className="rounded-xl bg-white shadow-xl w-full text-center p-8">
-          <div className="mb-8">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <h1 className="text-3xl font-bold text-indigo-600">EasyPay</h1>
-            <p className="text-gray-500 mt-2">Fast, secure, and easy payments</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center py-8 px-4 sm:px-6">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo */}
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 bg-indigo-600 rounded-xl flex items-center justify-center mb-4">
+            <span className="text-white text-2xl">✓</span>
           </div>
-          
-          <Heading label={"Create an Account"}/>
-          <SubHeading label={"Enter your details to get started"}/>
-          
-          <div className="mt-6 space-y-4">
-            <InputBox 
+          <Heading label="Create an Account" />
+          <SubHeading label="Enter your details to get started" />
+        </div>
+
+        {/* Form */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 border border-gray-200 dark:border-gray-700 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <InputBox
+              label="First Name"
+              placeholder="John"
               value={formData.firstname}
               onChange={handleChange("firstname")}
-              placeholder="Enter your first name"
-              label={"First Name"}
-              disabled={loading}
             />
-            <InputBox 
+            <InputBox
+              label="Last Name"
+              placeholder="Doe"
               value={formData.lastname}
               onChange={handleChange("lastname")}
-              placeholder="Enter your last name"
-              label={"Last Name"}
-              disabled={loading}
             />
-            <InputBox 
-              value={formData.username}
-              onChange={handleChange("username")}
-              placeholder="Choose a username"
-              label={"Username"}
-              disabled={loading}
-            />
-            <InputBox 
+          </div>
+
+          <InputBox
+            label="Username"
+            placeholder="johndoe"
+            value={formData.username}
+            onChange={handleChange("username")}
+          />
+
+          <div>
+            <InputBox
+              label="Password"
+              placeholder="••••••••"
+              type="password"
               value={formData.password}
               onChange={handleChange("password")}
-              placeholder="••••••••"
-              label={"Password"}
-              type="password"
-              disabled={loading}
             />
+            {/* Password strength indicator */}
+            <div className="mt-2">
+              <div className="flex gap-1 mb-1">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <div
+                    key={level}
+                    className={`h-1 flex-1 rounded-full transition-colors duration-200 ${
+                      level <= passwordStrength.score
+                        ? level <= 2
+                          ? "bg-red-500"
+                          : level <= 3
+                          ? "bg-yellow-500"
+                          : "bg-green-500"
+                        : "bg-gray-200 dark:bg-gray-700"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Password must contain at least 6 characters, including uppercase, lowercase, number, and special character
+              </div>
+            </div>
           </div>
 
-          <div className="mt-6">
-            <Button
-              onClick={handleSubmit}
-              label={loading ? "Creating Account..." : "Sign Up"}
-              disabled={loading || passwordStrength.score < 3}
-            />
-          </div>
+          {/* Error messages */}
+          {Object.keys(errors).length > 0 && (
+            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
+              <ul className="list-disc list-inside space-y-1">
+                {Object.values(errors).map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-          <BottomWarning 
-            label={"Already have an account?"} 
-            buttonText={"Sign In"}
-            to={"/signin"}
+          {/* Submit button */}
+          <Button
+            label={loading ? "Creating Account..." : "Create Account"}
+            onClick={handleSubmit}
+            disabled={loading || passwordStrength.score < 3}
           />
         </div>
+
+        {/* Bottom text */}
+        <BottomWarning
+          label="Already have an account?"
+          buttonText="Sign In"
+          to="/signin"
+        />
       </div>
     </div>
   );
