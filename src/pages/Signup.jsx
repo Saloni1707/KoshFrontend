@@ -6,7 +6,8 @@ import { InputBox } from "@/components/InputBox";
 import { Button } from "@/components/Button";
 import { BottomWarning } from "@/components/BottomWarnings";
 import axios from "axios";
-import { useAuth } from "../App"; // Adjust path as needed
+import { useAuth } from "@/contexts/AuthContext"; // Adjust the import path as necessary
+console.log("useAuth is:", useAuth);
 
 export const Signup = () => {
   const [formData, setFormData] = useState({
@@ -28,7 +29,12 @@ export const Signup = () => {
     }
   });
   const navigate = useNavigate();
-  const { login } = useAuth(); // Use the auth context
+  // const { login } = useAuth(); // Use the auth context
+  // console.log("Login function available:", login);
+
+  const auth = useAuth();
+  console.log("Auth object:", auth);
+  const login = auth?.login;
 
   // Password strength checker logic remains the same...
   useEffect(() => {
@@ -121,7 +127,7 @@ export const Signup = () => {
       const token = signinResponse.data.token;
       if (!token || typeof token !== 'string') {
         throw new Error("Invalid token received from server");
-      }
+      } 
   
       //Use the login function from context instead of directly setting localStorage
       login(token);
